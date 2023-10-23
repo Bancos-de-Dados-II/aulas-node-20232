@@ -6,62 +6,64 @@ module.exports.listarUsuarios = async function (req, res) {
   res.status(200).send(usuarios);
 };
 
-module.exports.buscarPorEmail = async function(req,res){
+module.exports.buscarPorEmail = async function (req, res) {
   //Buscar a chave no redis
   const retornoRedis = await client.get(req.params.email);
 
-  //Cache hit
-  if(retornoRedis){
-    res.send('Cache hit');
-  }else{
+  if (retornoRedis) {
+    //Cache hit
+    console.log('Veio de Redis');
+    res.status(200).send(retornoRedis);
+  } else {
     //Cache miss
     const usuario = await Usuario.findByPk(req.params.email);
 
-    if(usuario){
+    if (usuario) {
       await client.set(req.params.email, JSON.stringify(usuario));
+      console.log('Veio do Postgres');
       res.status(200).send(usuario);
-    }else{
+    } else {
       res.status(404).send('Usuário não encontrado');
     }
   }
 
 };
 
-module.exports.salvarUsuario = async function (req, res){
+module.exports.salvarUsuario = async function (req, res) {
   const usuario = Usuario.build(req.body);
-  try{
+  try {
     await usuario.save();
     res.status(201).send('Salvo');
-  }catch{
+  } catch {
     res.status(400).send('Falha ao salvar');
   }
 };
 
-module.exports.deletarUsuario = async function(req,res){
-  try{
+module.exports.deletarUsuario = async function (req, res) {
+  try {
     const deletados = await Usuario.destroy({
-      where: {email: req.params.email}
+      where: { email: req.params.email }
     });
-    if(deletados>0){
+    if (deletados > 0) {
       res.status(200).send('Usuário removido');
-    }else{
+    } else {
       res.status(404).send('Usuário não encontrado');
     }
-  }catch(error){
+  } catch (error) {
     res.status(400).send('Falha ao deletar');
   }
 };
 
-module.exports.atualizarUsuario = async function(req,res){
-  try{
+module.exports.atualizarUsuario = async function (req, res) {
+  try {
     const atualizados = await Usuario.update(
-      req.body, {where: {email: req.params.email}});
-    if(atualizados>0){
+      req.body, { where: { email: req.params.email } });
+    if (atualizados > 0) {
       res.status(200).send('Usuário atualizado');
-    }else{
+    } else {
       res.status(404).send('Usuário não encontrado');
     }
-  }catch(error){
+  } catch (error) {
     res.status(400).send('Falha ao atualizar');
   }
 };
