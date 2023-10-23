@@ -7,13 +7,22 @@ module.exports.listarUsuarios = async function (req, res) {
 };
 
 module.exports.buscarPorEmail = async function(req,res){
-  console.log(await client.ping());
-  const usuario = await Usuario.findByPk(req.params.email);
+  //Buscar a chave no redis
+  const retornoRedis = await client.get(req.params.email);
 
-  if(usuario){
-    res.status(200).send(usuario);
+  //Cache hit
+  if(retornoRedis){
+    res.send('Cache hit');
   }else{
-    res.status(404).send('Usuário não encontrado');
+    //Cache miss
+    const usuario = await Usuario.findByPk(req.params.email);
+
+    if(usuario){
+      await client.set(req.params.email, JSON.stringify(usuario));
+      res.status(200).send(usuario);
+    }else{
+      res.status(404).send('Usuário não encontrado');
+    }
   }
 
 };
