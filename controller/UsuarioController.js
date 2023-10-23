@@ -19,7 +19,8 @@ module.exports.buscarPorEmail = async function (req, res) {
     const usuario = await Usuario.findByPk(req.params.email);
 
     if (usuario) {
-      await client.set(req.params.email, JSON.stringify(usuario));
+      //Salvar no redis com tempo de vida de 1 hora
+      await client.set(req.params.email, JSON.stringify(usuario),{EX: 3600});
       console.log('Veio do Postgres');
       res.status(200).send(usuario);
     } else {
